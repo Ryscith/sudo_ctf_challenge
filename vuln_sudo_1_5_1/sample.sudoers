@@ -1,0 +1,85 @@
+#
+# Sample /etc/sudoers file.  (Assumes SunOS 4.x paths)
+#
+# This file MUST be edited with the 'visudo' command as root.
+#
+# See the man page for the details on how to write a sudoers file.
+#
+
+##
+# User alias specification
+##
+User_Alias	FULLTIMERS=millert,mikef,dowdy
+User_Alias	PARTTIMERS=bostley,jwfox,mccreary
+
+##
+# Cmnd alias specification
+##
+Cmnd_Alias      DUMPS=/usr/etc/dump,/usr/etc/rdump,/usr/etc/restore,\
+		      /usr/etc/rrestore,/usr/bin/mt
+Cmnd_Alias	KILL=/usr/bin/kill
+Cmnd_Alias	PRINTING=/usr/etc/lpc,/usr/ucb/lprm
+Cmnd_Alias	SHUTDOWN=/usr/etc/shutdown
+Cmnd_Alias	HALT=/usr/etc/halt,/usr/etc/fasthalt
+Cmnd_Alias	REBOOT=/usr/etc/reboot,/usr/etc/fastboot
+Cmnd_Alias	SHELLS=/usr/bin/sh,/usr/bin/csh,/usr/bin/ksh,\
+                       /usr/local/bin/tcsh,/usr/ucb/rsh,\
+                       /usr/local/bin/zsh
+Cmnd_Alias	SU=/usr/bin/su
+Cmnd_Alias	VIPW=/usr/etc/vipw,/etc/vipw,/bin/passwd
+
+##
+# Host alias specification
+##
+Host_Alias	SUN4=bruno,eclipse,moet,anchor
+Host_Alias	SUN3=brazil,columbine
+Host_Alias	DECSTATION=wilkinson,soma,dendrite,thang
+Host_Alias 	DECALPHA=widget,thalamus,foobar
+Host_Alias	HPSNAKE=boa,nag,python
+Host_Alias	CSNETS=128.138.243.0,128.138.204.0,128.138.242.0
+Host_Alias	CUNETS=128.138.0.0/255.255.0.0
+
+##
+# User specification
+##
+
+# root and users in group wheel can run anything on any machine as any user
+root		ALL=(ALL) ALL
+%wheel		ALL=(ALL) ALL
+
+# full time sysadmins can run anything on any machine without a password
+FULLTIMERS	ALL=NOPASSWD:ALL
+# part time sysadmins may run anything except root shells or su
+PARTTIMERS	ALL=ALL,!SU,!SHELLS
+
+# rodney may run anything except root shells or su on machines in CSNETS
+rodney		CSNETS=ALL,!SU,!SHELLS
+
+# smartguy may run any command on any host in CUNETS (call B address)
+smartguy	CUNETS=ALL
+
+# operator may run maintenance commands and anything in /usr/oper/bin/
+operator	ALL=DUMPS,KILL,PRINTING,SHUTDOWN,HALT,REBOOT,/usr/oper/bin/
+
+# joe may su only to operator
+joe		/usr/bin/su operator
+
+# pete may change passwords for anyone but root
+pete		/bin/passwd [A-z]*,!/bin/passwd root
+
+# bob may run anything except root shells or su on the sun3 and sun4 machines
+bob		SUN4=ALL,!SU,!SHELLS:\
+		SUN3=ALL,!SU,!SHELLS
+
+# jim may run anything on machines in the biglab netgroup
+jim		+biglab=ALL
+
+# users in the secretaries netgroup need to help manage the printers
++secretaries	ALL=PRINTING
+
+# fred can run /bin/ls as oracle by specifying -u oracle on command line;
+# he can also run /bin/date as uid -2 without entering a password
+fred		ALL=(oracle) /bin/ls,(#-2) NOPASSWD:/bin/date
+
+# somedude may su to anyone but root and must give su an argument
+somedude	ALL=/usr/bin/su ?*, !/usr/bin/su root

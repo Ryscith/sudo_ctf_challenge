@@ -1,0 +1,121 @@
+FAQ and troubleshooting tips for CU sudo
+========================================
+
+Q) Sudo compiles but when I run it I get "Sorry, sudo must be setuid root."
+   and sudo quits.
+A) Sudo must be setuid root to do its work.  You need to do something like
+   `chmod 4111 /usr/local/bin/sudo'.  Also, the filesystem sudo resides
+   on must *not* be mounted with the nosuid mount option or sudo will
+   not be able to work.
+
+Q) Sudo is setup to log via syslog(3) but I'm not getting any log
+   messages.
+A) Make sure you have an entry in your syslog.conf file to save
+   the sudo messages.  The default log facility is local2
+   (configurable in options.h) so you would want something like:
+	local2.debug				/var/adm/sudo.log
+   or
+	local2.debug				@loghost
+    depending whether you want to forward the messages to another
+    host or keep them locally.
+
+Q) When sudo asks me for my password it never accepts what I enter even
+   though I know I entered my password correctly.
+A) Try running configure with the --with-getpass option.  After this
+   when you build sudo it will use the system's getpass() routine instead
+   of sudo's own version.  If that doesn't work, and your OS uses shadow
+   passwords, re-run configure and add the --with-C2 option.  Configure
+   tries to guess whether or not you are using shadow passwords but
+   it is not bulletproof.
+   (see the INSTALL doc for a list of OS's that sudo knows how to get
+   shadow password info for).
+
+Q) Can I put the sudoers file in NIS/NIS+ or do I have to have a
+   copy on each machine?
+A) There is no support for making an NIS/NIS+ map/table out of
+   the sudoers file at this time.  A good way to distribute the
+   sudoers file is via rdist(1).  It is also possible to
+   NFS-mount the sudoers file.
+
+Q) I don't run sendmail on my machine.  Does this mean that I cannot
+   use sudo?
+A) No, you just need to comment out the MAILER #define in options.h.
+
+Q) When I run visudo it uses vi as the editor and I hate vi.  How
+   can I make it use another editor?
+A) Your best bet is to enable the ENV_EDITOR option in options.h.
+   This will make visudo use the editor specified by the user's
+   EDITOR environmental variable.  Alternately, you can change the
+   default editor by setting the EDITOR macro in options.h to
+   the editor of your choice.
+
+Q) Sudo appears to be removing some variables from my environment, why?
+A) Sudo removes the following "dangerous" environmental variables
+   to guard against shared library spoofing, shell voodoo, and
+   kerberos server spoofing.
+     IFS
+     ENV
+     BASH_ENV
+     LD_*
+     _RLD_*
+     SHLIB_PATH (HP-UX only)
+     LIB_PATH (AIX only)
+     KRB_CONF (kerberos only)
+
+Q) I can't get the s/key support to work, whatever I do sudo won't
+   accept my key.  I had to run configure with --with-getpass,
+   could that have something to do with it?
+A) Yes, the s/key support requires that you use tgetpass() since
+   most system getpass()'s only grab eight characters or so
+   and s/key needs much mroe than that.  It should be possible
+   to get tgetpass() to work, send mail to sudo-bugs@courtesan.com
+   if you need help.
+
+Q) My C compiler complains about:
+	"./options.h", line xx "/*" detected in comment
+   Should I be worried?
+A) No, this is due to the way options are commented out in options.h.
+   Some ANSI compilers are just a bit too protective.
+   If anyone have a better way to that is just as easy to uncomment
+   and that doesn't produce a similar warning, please let me know.
+
+Q) I modified parse.lex but the Makefile is not generating a new
+   lex.yy.c.
+A) You need to uncomment the rule in Makefile (or Makefile.in)
+   that generates lex.yy.c from parse.lex.  This is not enable
+   by default since sudo comes with a pre-flex'd parse.lex.
+   May sure you are using flex version 2.5.2 or higher--the
+   lex that came with your OS may not like parse.lex.
+
+Q) How can I keep sudo from asking for a password?
+A) Use the 'NOPASSWD' reserved word right before the command list in
+   sudoers.  See the sudoers man page and sample.sudoers for details.
+
+Q) When I run configure, it dies with the following error:
+   "no acceptable cc found in $PATH".
+A) /usr/ucb/cc was the only C compiler that configure could find.
+   You need to tell configure the path to the "real" C compiler
+   via the --with-CC option.  On Solaris, the path is probably
+   something like "/opt/SUNWspro/SC4.0/bin/cc".  If you have gcc
+   that will also work.
+
+Q) When I run configure, it dies with the following error:
+   Fatal Error: config.cache exists from another platform!
+   Please remove it and re-run configure.
+A) configure caches the results of its tests in a file called
+   config.cache to make re-running configure speedy.  However,
+   if you are building sudo for a different platform the results
+   in config.cache will be wrong so you need to remove config.cache.
+   You can do this by "rm config.cache" or "make realclean".
+   Note that "make realclean" will also remove any object files
+   and configure temp files that are laying around as well.
+
+Q) I built sudo on a Solaris 2.5 machine but the resulting binary
+   doesn't work on Solaris 2.4.  Why?
+A) Sun added many of the BSD library functions from -lucb into
+   libc for Solaris 2.5.  To generate a sudo binary on Solaris 2.5
+   that will run on Solaris 2.4 just add "getwd.o" to LIBOBJS
+   in the Makefile and recompile.
+
+Q) How do you pronounce `sudo'?
+A) soo-doo (for superuser do).

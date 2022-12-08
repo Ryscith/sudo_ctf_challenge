@@ -1,0 +1,849 @@
+dnl
+dnl Process this file with GNU autoconf to produce a configure script.
+dnl $Id$
+dnl
+AC_INIT(sudo.h)
+AC_CONFIG_HEADER(config.h)
+dnl
+dnl This won't work before AC_INIT()
+dnl
+echo "Configuring CU Sudo version 1.5.1"
+dnl
+dnl Variables that get substituted in the Makefile
+dnl
+PROGS="sudo visudo"
+AC_SUBST(CFLAGS)dnl
+AC_SUBST(PROGS)dnl
+SUDO_LDFLAGS=""
+AC_SUBST(SUDO_LDFLAGS)dnl
+VISUDO_LDFLAGS=""
+AC_SUBST(VISUDO_LDFLAGS)dnl
+SUDO_LIBS=""
+AC_SUBST(SUDO_LIBS)dnl
+VISUDO_LIBS=""
+AC_SUBST(VISUDO_LIBS)dnl
+AFS_LIBS=""
+AC_SUBST(AFS_LIBS)dnl
+CPPFLAGS=""
+AC_SUBST(CPPFLAGS)dnl
+OSDEFS=""
+AC_SUBST(OSDEFS)dnl
+OPTIONS=""
+AC_SUBST(OPTIONS)dnl
+DCE_OBJS=""
+AC_SUBST(DCE_OBJS)dnl
+LIBOBJS=""
+AC_SUBST(LIBOBJS)dnl
+TGETPASS="tgetpass.o"
+AC_SUBST(TGETPASS)dnl
+MANTYPE="man"
+AC_SUBST(MANTYPE)dnl
+MAN_POSTINSTALL=""
+AC_SUBST(MAN_POSTINSTALL)dnl
+
+dnl
+dnl Override default configure dirs...
+dnl
+test "$mandir" = '${prefix}/man' && mandir='$(prefix)/man'
+test "$bindir" = '${exec_prefix}/bin' && bindir='$(exec_prefix)/bin'
+test "$sbindir" = '${exec_prefix}/sbin' && sbindir='$(exec_prefix)/etc'
+test "$sysconfdir" = '${prefix}/etc' && sysconfdir='/etc'
+
+dnl
+dnl Options for --with
+dnl
+
+AC_ARG_WITH(CC, [  --with-CC               C compiler to use],
+[case $with_CC in
+    yes)	echo "Must give --with-CC an argument."
+		exit 1
+		;;
+    no)		echo "Illegal argument: --without-CC."
+		exit 1
+		;;
+    *)		CC=$with_CC
+		;;
+esac])
+
+AC_ARG_WITH(getpass, [  --with-getpass          use system getpass(3)],
+[case $with_getpass in
+    yes)	AC_DEFINE(USE_GETPASS)
+		echo 'Using system getpass'
+		TGETPASS=""
+		;;
+    no)		;;
+    *)		echo "Ignoring unknown argument to --with-getpass: $with_getpass"
+		;;
+esac])
+
+AC_ARG_WITH(C2, [  --with-C2               enable C2 security (shadow password) support],
+[case $with_C2 in
+    yes)	echo 'Configuring for C2 security (shadow passwords)'
+		;;
+    no)		;;
+    *)		echo "Ignoring unknown argument to --with-C2: $with_C2"
+		;;
+esac])
+
+AC_ARG_WITH(skey, [  --with-skey             enable S/Key support ],
+[case $with_skey in
+    yes)	AC_DEFINE(HAVE_SKEY)
+		echo 'Configuring for use with S/Key'
+		;;
+    no)		;;
+    *)		echo "Ignoring unknown argument to --with-skey: $with_skey"
+		;;
+esac])
+
+AC_ARG_WITH(SecurID, [  --with-SecurID          enable SecurID support],
+[case $with_SecurID in
+    yes)	AC_DEFINE(HAVE_SECURID)
+		echo 'Configuring for use with SecurID'
+		;;
+    no)		;;
+    *)		echo "Ignoring unknown argument to --with-SecurID: $with_SecurID"
+		;;
+esac])
+
+AC_ARG_WITH(kerb4, [  --with-kerb4            enable kerberos v4 support],
+[case $with_kerb4 in
+    yes)	AC_DEFINE(HAVE_KERB4)
+		echo 'Configuring for use with Kerberos version 4'
+		;;
+    no)		;;
+    *)		echo "Ignoring unknown argument to --with-kerb4: $with_kerb4"
+		;;
+esac])
+
+AC_ARG_WITH(kerb5, [  --with-kerb5            enable kerberos v5 support],
+[case $with_kerb5 in
+    yes)	AC_DEFINE(HAVE_KERB5)
+		echo 'Configuring for use with Kerberos version 5'
+		;;
+    no)		;;
+    *)		echo "Ignoring unknown argument to --with-kerb5: $with_kerb5"
+		;;
+esac])
+
+AC_ARG_WITH(AFS, [  --with-AFS              enable AFS support],
+[case $with_AFS in
+    yes)	AC_DEFINE(HAVE_AFS)
+		echo 'Configuring for use with AFS'
+		;;
+    no)		;;
+    *)		echo "Ignoring unknown argument to --with-AFS: $with_AFS"
+		;;
+esac])
+
+AC_ARG_WITH(DCE, [  --with-DCE              enable DCE support],
+[case $with_DCE in
+    yes)	AC_DEFINE(HAVE_DCE)
+		echo 'Configuring for use with DCE'
+		;;
+    no)		;;
+    *)		echo "Ignoring unknown argument to --with-DCE: $with_DCE"
+		;;
+esac])
+
+AC_ARG_WITH(incpath, [  --with-incpath          additional places to look for include files],
+[case $with_incpath in  
+    yes)	echo "Must give --with-incpath an argument."
+		exit 1
+		;;
+    no)		echo "Sorry, --without-incpath not supported."
+		exit 1
+		;;
+    *)		echo "Adding ${with_incpath} to CPPFLAGS"
+		for i in ${with_incpath}; do
+		    CPPFLAGS="${CPPFLAGS} -I${i}"
+		done
+		;;
+esac])
+
+AC_ARG_WITH(libpath, [  --with-libpath          additional places to look for libraries],
+[case $with_libpath in  
+    yes)	echo "Must give --with-libpath an argument."
+		exit 1
+		;;
+    no)		echo "Sorry, --without-libpath not supported."
+		exit 1
+		;;
+    *)		echo "Adding ${with_libpath} to SUDO_LDFLAGS and VISUDO_LDFLAGS"
+		for i in ${with_libpath}; do
+		    LDFLAGS="${LDFLAGS} -L${i}"
+		    SUDO_LDFLAGS="${SUDO_LDFLAGS} -L${i}"
+		    VISUDO_LDFLAGS="${VISUDO_LDFLAGS} -L${i}"
+		done
+		;;
+esac])
+
+AC_ARG_WITH(libraries, [  --with-libraries        additional libraries to link with],
+[case $with_libraries in  
+    yes)	echo "Must give --with-libraries an argument."
+		exit 1
+		;;
+    no)		echo "Sorry, --without-libraries not supported."
+		exit 1
+		;;
+    *)		echo "Adding ${with_libraries} to SUDO_LIBS and VISUDO_LIBS"
+		for i in ${with_libraries}; do
+		    case $i in
+			-l*)	;;
+			*.a)	;;
+			*.o)	;;
+			*)	i="-l${i}";;
+		    esac
+		    LIBS="${LIBS} ${i}"
+		    SUDO_LIBS="${SUDO_LIBS} ${i}"
+		    VISUDO_LIBS="${VISUDO_LIBS} ${i}"
+		done
+		;;
+esac])
+
+AC_ARG_WITH(csops, [  --with-csops            add CSOps standard options],
+[case $with_csops in  
+    yes)	OPTIONS="${OPTIONS} -DIGNORE_DOT_PATH -DUSE_INSULTS -DCLASSIC_INSULTS -DCSOPS_INSULTS -DENV_EDITOR"
+		sbindir='$(exec_prefix)/sbin'
+		echo 'CSOps--adding options: IGNORE_DOT_PATH USE_INSULTS CLASSIC_INSULTS CSOPS_INSULTS ENV_EDITOR'
+		;;
+    no)		;;
+    *)		echo "Ignoring unknown argument to --with-csops: $with_csops"
+		;;
+esac])
+
+dnl
+dnl If we don't have egrep we can't do anything...
+dnl
+AC_CHECK_PROG(EGREPPROG, egrep, egrep, )
+if test -z "$EGREPPROG"; then
+    echo "Sorry, configure requires egrep to run."
+    exit
+fi
+
+dnl
+dnl C compiler checks
+dnl
+ac_cv_c_cross="no"
+cross_compiling="no"
+AC_PROG_CC
+AC_PROG_CPP
+AC_ISC_POSIX
+
+dnl
+dnl find programs we use
+dnl
+AC_CHECK_PROG(UNAMEPROG, uname, uname, )
+AC_CHECK_PROG(TRPROG, tr, tr, )
+AC_CHECK_PROG(SEDPROG, sed, sed, )
+AC_CHECK_PROG(NROFFPROG, nroff, nroff, )
+if test -z "$NROFFPROG"; then
+    MANTYPE="cat"
+fi
+
+dnl
+dnl What kind of beastie are we being run on?
+dnl Barf if config.cache was generated on another host.
+dnl
+AC_CANONICAL_HOST
+if test -n "$sudo_cv_prev_host"; then
+    if test "$sudo_cv_prev_host" != "$host"; then
+	echo ""
+	echo "Fatal Error: config.cache exists from another platform!"
+	echo "Please remove it and re-run configure."
+	echo ""
+	exit 1
+    else
+	AC_MSG_CHECKING(previous host type)
+	AC_CACHE_VAL(sudo_cv_prev_host, sudo_cv_prev_host="$host")
+	echo $sudo_cv_prev_host
+    fi
+else
+    # this will produce no output since there is no cached value
+    AC_CACHE_VAL(sudo_cv_prev_host, sudo_cv_prev_host="$host")
+fi
+
+dnl
+dnl We want to be able to differentiate between different rev's
+dnl
+if test -n "$host_os"; then
+    OS=`echo $host_os | sed 's/[[0-9]].*//'`
+    OSREV=`echo $host_os | sed 's/^[[^0-9]]*\([[0-9]][[0-9]]*\).*$/\1/'`
+else
+    OS="unknown"
+    OSREV=0
+fi
+
+case "$host" in
+    *-*-sunos4*)
+		# Don't really need -lnsl
+		LIB_NSL=1
+
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_SUNOS4(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SHADOW_TYPE="SPW_SUNOS4"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+		;;
+    *-*-solaris2*)
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_SVR4(with_C2="yes")
+		fi
+		if test "$with_C2" != "no"; then
+		    with_C2="yes"
+		    SHADOW_TYPE="SPW_SVR4"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+
+		# AFS support needs -lucb
+		if test "$with_AFS" = "yes"; then
+		    AFS_LIBS="-lc -lucb"
+		fi
+		;;
+    *-*-aix*)
+		AC_DEFINE(_ALL_SOURCE)
+		SUDO_LDFLAGS="${SUDO_LDFLAGS} -Wl,-bI:\$(srcdir)/aixcrypt.exp"
+		;;
+    *-*-hpux10*)
+		# uncomment this for a statically linked sudo
+		# (XXX - should be an option to configure)
+		#STATIC_SUDO=true
+
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_SECUREWARE(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SHADOW_TYPE="SPW_SECUREWARE"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		    SUDO_LIBS="${SUDO_LIBS} -lsec"
+		    LIBS="${LIBS} -lsec"
+		fi
+
+		if test -n "$STATIC_SUDO"; then
+		    if test -n "$GCC"; then
+			SUDO_LDFLAGS="${SUDO_LDFLAGS} -static"
+		    else
+			SUDO_LDFLAGS="${SUDO_LDFLAGS} -Wl,-a,archive"
+		    fi
+		fi
+
+		# DCE support (requires ANSI C compiler)
+		if test "$with_DCE" = "yes"; then
+		    if test -n "$GCC"; then
+			CPPFLAGS="${CPPFLAGS} -D_HPUX_SOURCE"
+		    else
+			CPPFLAGS="${CPPFLAGS} -Aa -D_HPUX_SOURCE"
+		    fi
+		fi
+
+		# AFS support needs -lBSD
+		if test "$with_AFS" = "yes"; then
+		    AFS_LIBS="-lc -lBSD"
+		fi
+		;;
+    *-*-hpux9*)
+		# uncomment this for a statically linked sudo
+		# (XXX - should be an option to configure)
+		#STATIC_SUDO=true
+
+		AC_DEFINE(BROKEN_SYSLOG)
+
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_HPUX9(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SHADOW_TYPE="SPW_HPUX9"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+
+		if test -n "$STATIC_SUDO"; then
+		    if test -n "$GCC"; then
+			SUDO_LDFLAGS="${SUDO_LDFLAGS} -static"
+		    else
+			SUDO_LDFLAGS="${SUDO_LDFLAGS} -Wl,-a,archive"
+		    fi
+		fi
+
+		# DCE support (requires ANSI C compiler)
+		if test "$with_DCE" = "yes"; then
+		    # order of libs in 9.X is important. -lc_r must be last
+		    SUDO_LIBS="-ldce -lM -lc_r"
+
+		    if test -n "$GCC"; then
+			CPPFLAGS="${CPPFLAGS} -D_HPUX_SOURCE -D_REENTRANT -I/usr/include/reentrant"
+		    else
+			CPPFLAGS="${CPPFLAGS} -Aa -D_HPUX_SOURCE -D_REENTRANT -I/usr/include/reentrant"
+		    fi
+		fi
+
+		# AFS support needs -lBSD
+		if test "$with_AFS" = "yes"; then
+		    AFS_LIBS="-lc -lBSD"
+		fi
+		;;
+    *-*-hpux*)
+
+		AC_DEFINE(BROKEN_SYSLOG)
+
+		# Not sure if setuid binaries are safe in < 9.x
+		if test -n "$GCC"; then
+		    SUDO_LDFLAGS="${SUDO_LDFLAGS} -static"
+		else
+		    SUDO_LDFLAGS="${SUDO_LDFLAGS} -Wl,-a,archive"
+		fi
+
+		# AFS support needs -lBSD
+		if test "$with_AFS" = "yes"; then
+		    AFS_LIBS="-lc -lBSD"
+		fi
+		;;
+    *-dec-osf*)
+		# Don't really need -lnsl (DUNIX 4.x has it, < 4.x does not)
+		LIB_NSL=1
+
+		# ignore envariables wrt dynamic lib path
+		SUDO_LDFLAGS="${SUDO_LDFLAGS} -Wl,-no_library_replacement"
+
+		# C2 security stuff
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_DUNIX(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SUDO_LIBS="${SUDO_LIBS} -lsecurity -laud"
+		    LIBS="${LIBS} -lsecurity -laud"
+		    SHADOW_TYPE="SPW_SECUREWARE"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+		;;
+    *-*-irix*)
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_SVR4(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SHADOW_TYPE="SPW_SVR4"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+
+		# configure may not think irix has stdc headers
+		# but it's good enough for sudo
+		AC_DEFINE(STDC_HEADERS)
+		if test -z "$NROFFPROG"; then
+		    MAN_POSTINSTALL='	/bin/rm -f $(mandir8)/sudo.$(mansect8).z $(mandir8)/visudo.$(mansect8).z $(mandir5)/sudoers.$(mansect5).z ; /usr/bin/pack $(mandir8)/sudo.$(mansect8) $(mandir8)/visudo.$(mansect8) $(mandir5)/sudoers.$(mansect5)'
+		    if test -d /usr/share/catman/local; then
+			mandir="/usr/share/catman/local"
+		    else
+			mandir="/usr/catman/local"
+		    fi
+		else
+		    if test -d "/usr/share/man/local"; then
+			mandir="/usr/share/man/local"
+		    else
+			mandir="/usr/man/local"
+		    fi
+		fi
+		;;
+    *-*-linux*)
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_SVR4(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SHADOW_TYPE="SPW_SVR4"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		    OSDEFS="${OSDEFS} -DSHADOW_PWD"
+		    AC_CHECK_FUNC(getspnam, ,
+			SUDO_LIBS="${SUDO_LIBS} -lshadow"
+			LIBS="${LIBS} -lshadow")
+		fi
+		;;
+    *-convex-bsd*)
+		AC_DEFINE(_CONVEX_SOURCE)
+		if test -z "$GCC"; then
+		    CFLAGS="${CFLAGS} -D__STDC__"
+		fi
+
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_SECUREWARE(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    OSDEFS="${OSDEFS} -D_AUDIT -D_ACL -DSecureWare"
+		    SUDO_LIBS="${SUDO_LIBS} -lprot"
+		    LIBS="${LIBS} -lprot"
+		    SHADOW_TYPE="SPW_SECUREWARE"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+		;;
+    *-*-ultrix*)
+		OS="ultrix"
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_ULTRIX4(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SUDO_LIBS="${SUDO_LIBS} -lauth"
+		    LIBS="${LIBS} -lauth"
+		    SHADOW_TYPE="SPW_ULTRIX4"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+		;;
+    *-*-riscos*)
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_SVR4(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SHADOW_TYPE="SPW_SVR4"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+
+		SUDO_LIBS="${SUDO_LIBS} -lsun -lbsd"
+		LIBS="${LIBS} -lsun -lbsd"
+		CPPFLAGS="${CPPFLAGS} -I/usr/include -I/usr/include/bsd"
+		OSDEFS="${OSDEFS} -D_MIPS"
+		;;
+    *-*-isc*)
+		OSDEFS="${OSDEFS} -D_ISC"
+		LIB_CRYPT=1
+		SUDO_LIBS="${SUDO_LIBS} -lcrypt"
+		LIBS="${LIBS} -lcrypt"
+
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_SVR4(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SUDO_LIBS="${SUDO_LIBS} -lsec"
+		    LIBS="${LIBS} -lsec"
+		    SHADOW_TYPE="SPW_SVR4"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+		;;
+    *-*-sco*)
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_SECUREWARE(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SHADOW_TYPE="SPW_SECUREWARE"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		    SUDO_LIBS="${SUDO_LIBS} -lprot -lx"
+		    LIBS="${LIBS} -lprot -lx"
+		fi
+		;;
+    *-*-unicos*)
+		# configure thinks we have -lsocket and -linet but we don't
+		LIB_INET=1
+		LIB_SOCKET=1
+		;;
+    *-*-bsdi*)
+		# Use shlicc for BSD/OS 2.x unless asked to do otherwise
+		if test "$OSREV" -ge 2 -a "${with_CC+set}" != set -a \
+			"$ac_cv_prog_CC" = "gcc"; then
+		    echo 'using shlicc as CC'
+		    ac_cv_prog_CC=shlicc
+		    CC="$ac_cv_prog_CC"
+		fi
+
+		# This should always be true but why not be careful...
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_BSD(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SHADOW_TYPE="SPW_BSD"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+		;;
+    *-*-*bsd*)
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_BSD(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SHADOW_TYPE="SPW_BSD"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+		;;
+    *-*-sysv*)
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_SVR4(with_C2="yes")
+		fi
+		if test "$with_C2" = "yes"; then
+		    SHADOW_TYPE="SPW_SVR4"
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+		;;
+    *)
+		if test -z "$host"; then
+		    echo "Unable to guess system type, you may need to specify on the command line."
+		fi
+
+		dnl
+		dnl Is this OS using shadow passwords?
+		dnl Just check the most common schemes.
+		dnl
+		if test -z "$with_C2"; then
+		    SUDO_CHECK_SHADOW_GENERIC(with_C2="yes")
+		    AC_MSG_CHECKING(for shadow passwords and type)
+		    case "$SHADOW_TYPE" in
+			"SPW_SVR4")
+			    echo "SVR4"
+			    ;;
+			"SPW_BSD")
+			    echo "BSD"
+			    ;;
+			"SPW_SECUREWARE")
+			    echo "SecureWare"
+			    SUDO_LIBS="${SUDO_LIBS} -lprot -lx"
+			    LIBS="${LIBS} -lprot -lx"
+			    ;;
+			"SPW_NONE")
+			    echo "none"
+		    esac
+		    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+		fi
+		;;
+esac
+
+dnl
+dnl Guess shadow password type unless we already know it.
+dnl This is used when the user specified --with-C2 option.
+dnl
+if test "$with_C2" = "yes" -a -z "$SHADOW_TYPE"; then
+    AC_CHECK_FUNC(getprpwuid, SHADOW_TYPE="SPW_SECUREWARE", [AC_CHECK_FUNC(getspnam, SHADOW_TYPE="SPW_SVR4", [test -f /etc/master.passwd && SHADOW_TYPE="SPW_BSD"])])
+    AC_MSG_CHECKING(for shadow password type)
+    case "$SHADOW_TYPE" in
+	"SPW_SVR4")
+		echo "SVR4"
+		;;
+	"SPW_BSD")
+		echo "BSD"
+		;;
+	"SPW_SECUREWARE")
+		echo "SecureWare"
+		SUDO_LIBS="${SUDO_LIBS} -lprot -lx"
+		LIBS="${LIBS} -lprot -lx"
+		;;
+	*)
+		SHADOW_TYPE="SPW_NONE"
+		echo "unknown"
+		echo "Unable to determine shadow passwd type, sudo may not be able to verify passwords"
+		;;
+    esac
+    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+elif test -z "$SHADOW_TYPE"; then
+    SHADOW_TYPE="SPW_NONE"
+    AC_DEFINE_UNQUOTED(SHADOW_TYPE, $SHADOW_TYPE)
+fi
+
+dnl
+dnl C compiler checks (to be done after os checks)
+dnl
+AC_PROG_GCC_TRADITIONAL
+AC_C_CONST
+dnl
+dnl Program checks
+dnl
+AC_PROG_YACC
+SUDO_PROG_SENDMAIL
+SUDO_PROG_PWD
+SUDO_PROG_MV
+SUDO_PROG_BSHELL
+SUDO_PROG_VI
+dnl
+dnl Header file checks
+dnl
+AC_HEADER_STDC
+AC_HEADER_DIRENT
+AC_CHECK_HEADERS(string.h strings.h unistd.h malloc.h paths.h utime.h fnmatch.h netgroup.h sys/sockio.h sys/bsdtypes.h)
+dnl ultrix termio/termios are broken
+if test "$OS" != "ultrix"; then
+    AC_CHECK_HEADERS(termio.h)
+    AC_CHECK_HEADERS(termios.h, AC_CHECK_FUNCS(tcgetattr))
+fi
+dnl
+dnl typedef checks
+dnl
+AC_TYPE_MODE_T
+AC_TYPE_UID_T
+SUDO_TYPE_SIZE_T
+SUDO_TYPE_SSIZE_T
+SUDO_FULL_VOID
+SUDO_UID_T_LEN
+SUDO_SOCK_SA_LEN
+dnl
+dnl only set RETSIGTYPE if it is not set already
+dnl
+case "$DEFS" in
+    *"RETSIGTYPE"*)	;;
+    *)			AC_TYPE_SIGNAL;;
+esac
+dnl
+dnl Function checks
+dnl
+AC_CHECK_FUNCS(strchr strrchr memcpy memset sysconf sigaction tzset strcasecmp)
+if test "$SHADOW_TYPE" = "SPW_SECUREWARE"; then
+    AC_CHECK_FUNCS(bigcrypt)
+fi
+AC_CHECK_FUNC(innetgr, AC_DEFINE(HAVE_INNETGR) AC_CHECK_FUNCS(getdomainname))
+AC_CHECK_FUNC(getwd, AC_DEFINE(HAVE_GETWD), LIBOBJS="$LIBOBJS getwd.o")
+AC_CHECK_FUNC(strdup, AC_DEFINE(HAVE_STRDUP), LIBOBJS="$LIBOBJS strdup.o")
+AC_CHECK_FUNC(fnmatch, AC_DEFINE(HAVE_FNMATCH), LIBOBJS="$LIBOBJS fnmatch.o")
+AC_CHECK_FUNC(lsearch, AC_DEFINE(HAVE_LSEARCH), AC_CHECK_LIB(compat, lsearch, AC_CHECK_HEADER(search.h, AC_DEFINE(HAVE_LSEARCH) SUDO_LIBS="${SUDO_LIBS} -lcompat"; VISUDO_LIBS="${VISUDO_LIBS} -lcompat", LIBOBJS="$LIBOBJS lsearch.o"), LIBOBJS="$LIBOBJS lsearch.o"))
+AC_CHECK_FUNC(setenv, AC_DEFINE(HAVE_SETENV), AC_FUNC_CHECK(putenv, AC_DEFINE(HAVE_PUTENV), LIBOBJS="$LIBOBJS putenv.o"))
+AC_CHECK_FUNC(utime, AC_DEFINE(HAVE_UTIME)
+SUDO_FUNC_UTIME_POSIX
+AC_FUNC_UTIME_NULL, LIBOBJS="$LIBOBJS utime.o")
+dnl
+dnl if crypt(3) not in libc, look elsewhere
+dnl
+if test -z "$LIB_CRYPT"; then
+    AC_CHECK_FUNC(crypt, ,AC_CHECK_LIB(crypt, crypt, SUDO_LIBS="${SUDO_LIBS} -lcrypt", AC_CHECK_LIB(crypt_d, crypt, SUDO_LIBS="${SUDO_LIBS} -lcrypt_d", AC_CHECK_LIB(crypt, ufc, SUDO_LIBS="${SUDO_LIBS} -lufc"))))
+fi
+dnl
+dnl Bison and DCE use alloca(3), if not in libc, use the sudo one (from gcc)
+dnl (gcc includes its own alloca(3) but other compilers may not)
+dnl
+if test "$with_DCE" = "yes" -o "$ac_cv_prog_YACC" = "bison -y"; then
+    AC_FUNC_ALLOCA
+fi
+dnl
+dnl library checks
+dnl
+dnl Irix doesn't want -lnsl or -lsocket (and Irix 4 needs -lsun)
+if test "$OS" != "irix"; then
+    if test -z "$LIB_NSL"; then
+	AC_CHECK_LIB(nsl, main, SUDO_LIBS="${SUDO_LIBS} -lnsl")
+    fi
+    if test -z "$LIB_SOCKET"; then
+	AC_CHECK_LIB(socket, main, SUDO_LIBS="${SUDO_LIBS} -lsocket")
+    fi
+elif test "$OSREV" -lt 5; then
+    AC_CHECK_LIB(sun, getpwnam, [SUDO_LIBS="${SUDO_LIBS} -lsun"
+VISUDO_LIBS="${VISUDO_LIBS} -lsun"]
+)
+fi
+if test -z "$LIB_INET"; then
+    AC_CHECK_LIB(inet, main, SUDO_LIBS="${SUDO_LIBS} -linet")
+fi
+dnl
+dnl Find kerberos includes and libs or complain
+dnl
+if test "$with_kerb4" = "yes" -o "$with_kerb5" = "yes"; then
+    if test -f "/usr/include/kerberosIV/krb.h"; then
+	CPPFLAGS="${CPPFLAGS} -I/usr/include/kerberosIV"
+    elif test -f "/usr/local/include/kerberosIV/krb.h"; then
+	CPPFLAGS="${CPPFLAGS} -I/usr/local/include/kerberosIV"
+    elif test -f "/usr/kerberos/include/krb.h"; then
+	CPPFLAGS="${CPPFLAGS} -I/usr/kerberos/include"
+    elif test -f "/usr/local/kerberos/include/krb.h"; then
+	CPPFLAGS="${CPPFLAGS} -I/usr/local/kerberos/include"
+    else
+	echo 'Unable to locate kerberos include files, you will have to edit the Makefile and add -I/path/to/krb/includes to CPPFLAGS'
+    fi
+
+    if test -d "/usr/kerberos/lib"; then
+	SUDO_LDFLAGS="${SUDO_LDFLAGS} -L/usr/kerberos/lib"
+    elif test -d "/usr/lib/kerberos"; then
+	SUDO_LDFLAGS="${SUDO_LDFLAGS} -L/usr/lib/kerberos"
+    elif test -f "/usr/local/lib/libkrb.a"; then
+	SUDO_LDFLAGS="${SUDO_LDFLAGS} -L/usr/local/lib"
+    elif test ! -f "/usr/lib/libkrb.a"; then
+	echo 'Unable to locate kerberos libraries, you will have to edit the Makefile and add -L/path/to/krb/libs to SUDO_LDFLAGS'
+    fi
+
+    SUDO_LIBS="${SUDO_LIBS} -lkrb -ldes"
+    if test "$with_kerb5" = "yes"; then
+	SUDO_LIBS="${SUDO_LIBS} -ldes425 -lkrb5 -lcrypto -lcom_err"
+    fi
+fi
+
+dnl
+dnl extra AFS libs and includes
+dnl
+if test "$with_AFS" = "yes"; then
+
+    # looks like the "standard" place for AFS libs is /usr/afsws/lib
+    AFSLIBDIRS="/usr/lib/afs /usr/afsws/lib /usr/afsws/lib/afs"
+    for i in $AFSLIBDIRS; do
+	if test -d ${i}; then
+	    SUDO_LDFLAGS="${SUDO_LDFLAGS} -L${i}"
+	    FOUND_AFSLIBDIR=true
+	fi
+    done
+    if test -z "$FOUND_AFSLIBDIR"; then
+	echo 'Unable to locate AFS libraries, you will have to edit the Makefile and add -L/path/to/afs/libs to SUDO_LDFLAGS or rerun configure with the --with-libpath options.'
+    fi
+
+    # Order is important here.  Note that we build AFS_LIBS from right to left
+    # since AFS_LIBS may be initialized with BSD compat libs that must go last
+    AFS_LIBS="-laudit ${AFS_LIBS}"
+    for i in $AFSLIBDIRS; do
+	if test -f ${i}/util.a; then
+	    AFS_LIBS="${i}/util.a ${AFS_LIBS}"
+	    FOUND_UTIL_A=true
+	    break;
+	fi
+    done
+    if test -z "$FOUND_UTIL_A"; then
+	AFS_LIBS="-lutil ${AFS_LIBS}"
+    fi
+    AFS_LIBS="-lkauth -lprot -lubik -lauth -lrxkad -lsys -ldes -lrx -llwp -lcom_err ${AFS_LIBS}"
+
+    # AFS includes may live in /usr/include on some machines...
+    for i in /usr/afsws/include; do
+	if test -d ${i}; then
+	    CPPFLAGS="${CPPFLAGS} -I${i}"
+	    FOUND_AFSINCDIR=true
+	fi
+    done
+
+    if test -z "$FOUND_AFSLIBDIR"; then
+	echo 'Unable to locate AFS include dir, you may have to edit the Makefile and add -I/path/to/afs/includes to CPPFLAGS or rerun configure with the --with-incpath options.'
+    fi
+fi
+
+dnl
+dnl extra DCE obj + lib
+dnl Order of libs in HP-UX 10.x is important, -ldce must be last.
+dnl
+if test "$with_DCE" = "yes"; then
+    DCE_OBJS="${DCE_OBJS} dce_pwent.o"
+    SUDO_LIBS="${SUDO_LIBS} -ldce"
+fi
+
+dnl
+dnl extra Skey lib and includes
+dnl
+if test "$with_skey" = "yes"; then
+    SUDO_LIBS="${SUDO_LIBS} -lskey"
+    if test -f /usr/include/skey.h -a -f /usr/lib/libskey.a; then
+	:
+    elif test -f /usr/local/include/skey.h; then
+	CPPFLAGS="${CPPFLAGS} -I/usr/local/include"
+	SUDO_LDFLAGS="${SUDO_LDFLAGS} -L/usr/local/lib"
+    elif test "$with_csops" = "yes" -a -f /tools/cs/skey/include/skey.h -a -f /tools/cs/skey/lib/libskey.a; then
+	CPPFLAGS="${CPPFLAGS} -I/tools/cs/skey/include"
+	SUDO_LDFLAGS="${SUDO_LDFLAGS} -L/tools/cs/skey/lib"
+    else
+	echo 'Unable to locate libskey.a and/or skey.h, you will have to edit the Makefile and add -L/path/to/skey/lib to SUDO_LDFLAGS and/or -I/path/to/skey.h to CPPFLAGS'
+    fi
+fi
+
+dnl
+dnl extra SecurID lib + includes
+dnl
+if test "$with_SecurID" = "yes"; then
+    SUDO_LIBS="${SUDO_LIBS} /usr/ace/sdiclient.a"
+    CPPFLAGS="${CPPFLAGS} -I/usr/ace"
+fi
+
+dnl
+dnl Check for log file and timestamp locations
+dnl
+SUDO_LOGFILE
+SUDO_TIMEDIR
+
+dnl
+dnl Set exec_prefix
+dnl
+test "$exec_prefix" = "NONE" && exec_prefix='$(prefix)'
+
+dnl
+dnl Substitute into the Makefiles
+dnl
+AC_OUTPUT(Makefile)

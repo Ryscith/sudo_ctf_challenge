@@ -1,0 +1,32 @@
+A Brief history of sudo(8):
+
+The sudo philosophy originated at SUNY-Buffalo in the early
+1980's.  In the Summer of 1986, Garth Snyder enhanced sudo
+and released it to the public.  For the next 5 years, 
+sudo was fed and watered by a handful of folks
+at CU-Boulder, including Bob Coggeshall, Bob Manchek, and 
+Trent Hein.
+
+In 1991, the University of Colorado and a consulting firm
+named "The Root Group" both paid (unbeknownst to each
+other) a group of programmers to add enhancements to sudo.
+Instead of using existing code, they started from scratch.
+These programmers (Dave Hieb and Jeff Nieusma) eventually
+released the new code under the GNU general license.
+
+In 1996, Todd Miller, who had been maintaining sudo
+for several years in his spare time, brought sudo
+developement under the umbrella of his consulting firm,
+Courtesan Consulting.  Courtesan remains committed to
+a free sudo and is sponsoring another sudo rewrite
+as well as continued developement of the sudo 1.x
+code base.
+
+sudo, in its current form, is maintained by:
+
+	Todd Miller
+	<Todd.Miller@courtesan.com>
+	(303) 492-5720
+
+Todd continues to enhance sudo and fix bugs.  Bug reports and
+fixes should be mailed to sudo-bugs@courtesan.com.

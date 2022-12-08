@@ -1,0 +1,81 @@
+This is the CU version of sudo, release 1.5.1
+
+The sudo philosophy
+===================
+
+Sudo is a program designed to allow a sysadmin to give limited root privileges
+to users and log root activity.  The basic philosophy is to give as few
+privileges as possible but still allow people to get their work done.
+
+Where to find sudo
+==================
+Before you try and build sudo, *please* make sure you have the current
+version.  The latest sudo may always be gotten via anonymous ftp
+from ftp.courtesan.com in the directory /pub/sudo/.
+The distribution is cu-sudo.vM.m.tar.Z where `M' is the major
+version number and `m' is the minor version number.
+BETA versions of sudo may also be available.  If you join
+the `sudo-workers' mailing list you will get the BETA announcements
+(see the `Mailing lists' section below).
+
+What's new
+==========
+For a history of CU sudo please see the HISTORY file that came with the
+release.  Please note that while this source is based on the Root
+Group's sudo 1.1, the code has been changed significantly, so please
+do not bother them with bugs in CU sudo.  Bug reports for this sudo
+should be sent to sudo-bugs@courtesan.com.
+
+For a complete list of changes, see the CHANGES file.  For a summary,
+see the web page, http://www.courtesan.com/courtesan/products/sudo/.
+
+System requirements
+===================
+
+Sudo requires a machine running UN*X (most flavors of BSD, SYSV, or
+POSIX will do), a C compiler, and a yacc-compatible parser generator
+(yacc, byacc, bison).  If you wish to modify the tokenizer then you
+will need flex version 2.5.2 or later.  (sudo comes with a pre-flex'd
+tokenizer).  You can get flex via anonymous ftp from
+ftp://ftp.ee.lbl.gov/pub/flex* as well as any GNU mirror.
+
+Building the release
+===================
+
+Please read the installation guide in the `INSTALL' file before
+trying to build sudo.  Things have changed quite a bit from the
+previous release (1.4).  The `RUNSON' file contains a list of
+of platforms that this version of sudo is known to work on.  If you
+can add to this list, please send mail to sudo-bugs@courtesan.com.
+If something goes wrong you may want to refer to the `TROUBLESHOOTING'
+file.
+
+Copyright
+=========
+
+Sudo is distributed under the `GNU general public license.'
+Please refer to the `COPYING' file included with the release
+for a copy of the license proper.
+
+Mailing lists
+=============
+
+There is a mailing list that receives announcements whenever a new
+version of sudo is released.  You can subscribe to it by sending a
+message to "majordomo@cs.colorado.edu" that includes the line
+"subscribe sudo-announce".
+There is also a list for people working on and porting sudo.  The
+command to add yourself is "subscribe sudo-workers".
+
+Web page
+========
+
+There is a sudo `web page' at http://www.courtesan.com/courtesan/products/sudo/
+that contains an overview of sudo as well as pointers to BETA versions
+and other useful info.
+
+Bug reports
+===========
+A list of known bugs may be found in the `BUGS' file.
+Please send (new) bugs, problems, comments, features, ports, etc
+to sudo-bugs@courtesan.com.

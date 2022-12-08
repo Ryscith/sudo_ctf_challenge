@@ -1,0 +1,248 @@
+#*
+#* CU sudo version 1.5.1 (based on Root Group sudo version 1.1)
+#*
+#* This software comes with no waranty whatsoever, use at your own risk.
+#*
+#* Please send bugs, changes, problems to sudo-bugs@courtesan.com
+#*
+
+#*  sudo version 1.1 allows users to execute commands as root
+#*  Copyright (C) 1991  The Root Group, Inc.
+#*
+#*  This program is free software; you can redistribute it and/or modify
+#*  it under the terms of the GNU General Public License as published by
+#*  the Free Software Foundation; either version 1, or (at your option)
+#*  any later version.
+#*
+#*  This program is distributed in the hope that it will be useful,
+#*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#*  GNU General Public License for more details.
+#*
+#*  You should have received a copy of the GNU General Public License
+#*  along with this program; if not, write to the Free Software
+#*  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#*
+#* @configure_input@
+#*
+
+#### Start of system configuration section. ####
+
+srcdir = @srcdir@
+VPATH = @srcdir@
+
+# Compiler & tools to use
+CC = @CC@
+LEX = flex
+YACC = @YACC@
+NROFF = nroff
+
+# Which install program?
+INSTALL = $(srcdir)/install-sh -c
+
+# Libraries
+SUDO_LIBS = @SUDO_LIBS@ @AFS_LIBS@
+VISUDO_LIBS = @VISUDO_LIBS@
+
+# OS defines
+OSDEFS = @OSDEFS@
+
+# C preprocessor flags
+CPPFLAGS = -I. -I$(srcdir) @CPPFLAGS@
+
+# Usually -g or -O
+CFLAGS = @CFLAGS@
+
+# Flags to pass to the link stage
+SUDO_LDFLAGS = @SUDO_LDFLAGS@
+VISUDO_LDFLAGS = @VISUDO_LDFLAGS@
+
+# Where to install things...
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+sysconfdir = @sysconfdir@
+mandir = @mandir@
+
+# Directory in which to install sudo.
+sudodir = $(bindir)
+
+# Directory in which to install visudo
+visudodir = $(sbindir)
+
+# Directory in which to install the sudoers file
+sudoersdir = $(sysconfdir)
+
+# Directory in which to install the man page
+# set mansect5 to 4 on sysV machines.
+mantype = @MANTYPE@
+mansect8 = 8
+mansect5 = 5
+mandir8 = $(mandir)/$(mantype)$(mansect8)
+mandir5 = $(mandir)/$(mantype)$(mansect5)
+
+# User and group ids the installed files should be "owned" by
+install_uid = 0
+install_gid = 0
+
+# See options.h and OPTIONS for a list of options
+OPTIONS = @OPTIONS@ -D_PATH_SUDO_SUDOERS=\"$(sudoersdir)/sudoers\" -D_PATH_SUDO_STMP=\"$(sudoersdir)/stmp\" -DSUDOERS_UID=$(install_uid) -DSUDOERS_GID=$(install_gid)
+
+#### End of system configuration section. ####
+
+SHELL = /bin/sh
+
+PROGS = @PROGS@
+
+SRCS = check.c getspwuid.c find_path.c logging.c parse.c sudo.c \
+       goodpath.c sudo_setenv.c parse.yacc parse.lex visudo.c interfaces.c
+
+PARSEOBJS = y.tab.o lex.yy.o
+
+SUDOBJS = check.o getspwuid.o find_path.o logging.o parse.o sudo.o goodpath.o \
+          sudo_setenv.o interfaces.o @DCE_OBJS@ @TGETPASS@
+
+VISUDOBJS = visudo.o
+
+TESTOBJS = interfaces.o testsudoers.o
+
+LIBOBJS = @LIBOBJS@ @ALLOCA@
+
+HDRS = sudo.h pathnames.h options.h compat.h version.h insults.h \
+       ins_2001.h ins_classic.h ins_goons.h ins_csops.h
+
+VERSION = 1.5.1
+
+DISTFILES = $(SRCS) $(HDRS) BUGS CHANGES COPYING HISTORY INSTALL OPTIONS TODO \
+            PORTING README RUNSON FAQ TROUBLESHOOTING Makefile.in acsite.m4 \
+            aixcrypt.exp config.h.in configure configure.in config.guess \
+	    config.sub getwd.c strdup.c indent.pro install-sh mkinstalldirs \
+	    lsearch.c putenv.c tgetpass.c emul/search.h emul/utime.h utime.c \
+	    fnmatch.c emul/fnmatch.h fnmatch.3 testsudoers.c sample.sudoers \
+	    sudo.pod sudo.man sudo.cat visudo.pod visudo.man visudo.cat \
+	    sudoers.pod sudoers.man sudoers.cat lex.yy.c sudo-lex.yy.c sudoers \
+	    dce_pwent.c alloca.c INSTALL.configure
+
+all: $(PROGS)
+
+.SUFFIXES: .o .c .h .lex .yacc .man .cat
+
+.c.o:
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $(OSDEFS) $(OPTIONS) $<
+
+.man.cat:
+	@rm -f $(srcdir)/$@
+	$(NROFF) -man $< > $(srcdir)/$@
+	@chmod 444 $(srcdir)/$@
+
+sudo: $(PARSEOBJS) $(SUDOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(PARSEOBJS) $(SUDOBJS) $(LIBOBJS) $(SUDO_LDFLAGS) $(SUDO_LIBS)
+
+visudo: $(PARSEOBJS) $(VISUDOBJS) $(LIBOBJS)
+	$(CC) -o $@ $(PARSEOBJS) $(VISUDOBJS) $(LIBOBJS) $(VISUDO_LDFLAGS) $(VISUDO_LIBS)
+
+testsudoers: $(PARSEOBJS) $(TESTOBJS)
+	$(CC) -o $@ $(PARSEOBJS) $(TESTOBJS) $(VISUDO_LDFLAGS) $(VISUDO_LIBS)
+
+y.tab.c y.tab.h: parse.yacc
+	$(YACC) -d $(srcdir)/parse.yacc
+
+y.tab.o: $(HDRS) y.tab.c
+	$(CC) -c $(CPPFLAGS) $(CFLAGS) $(OSDEFS) $(OPTIONS) y.tab.c
+
+# Uncomment the following if you intend to modify parse.lex
+lex.yy.c: parse.lex
+#	rm -f lex.yy.c
+	$(LEX) $(srcdir)/parse.lex
+
+lex.yy.o: lex.yy.c y.tab.h $(HDRS)
+
+$(SUDOBJS) $(LIBOBJS) : $(HDRS) config.h
+
+sudo.html: $(srcdir)/sudo.pod
+	@rm -f $(srcdir)/$@
+	pod2html --title="Sudo Manual" --infile=$< --outfile=$(srcdir)/$@
+	@chmod 444 $(srcdir)/$@
+
+sudo.man: $(srcdir)/sudo.pod
+	@rm -f $(srcdir)/$@
+	pod2man --section=$(mansect8) --release=$(VERSION) --center="MAINTENANCE COMMANDS" $< > $(srcdir)/$@
+	@chmod 444 $(srcdir)/$@
+
+sudo.cat: $(srcdir)/sudo.man
+
+visudo.html: $(srcdir)/visudo.pod
+	@rm -f $(srcdir)/$@
+	pod2html --title="Visudo Manual" --infile=$< --outfile=$(srcdir)/$@
+	@chmod 444 $(srcdir)/$@
+
+visudo.man: $(srcdir)/visudo.pod
+	@rm -f $(srcdir)/$@
+	pod2man --section=$(mansect8) --release=$(VERSION) --center="MAINTENANCE COMMANDS" $< > $(srcdir)/$@
+	@chmod 444 $(srcdir)/$@
+
+visudo.cat: $(srcdir)/visudo.man
+
+sudoers.html: $(srcdir)/sudoers.pod
+	@rm -f $(srcdir)/$@
+	pod2html --title="Sudoers Manual" --infile=$< --outfile=$(srcdir)/$@
+	@chmod 444 $(srcdir)/$@
+
+sudoers.man: $(srcdir)/sudoers.pod
+	@rm -f $(srcdir)/$@
+	pod2man --section=$(mansect5) --release=$(VERSION) --center="FILE FORMATS" $< > $(srcdir)/$@
+	@chmod 444 $(srcdir)/$@
+
+sudoers.cat: $(srcdir)/sudoers.man
+
+install: install-dirs install-binaries install-sudoers install-man
+
+install-dirs:
+	$(srcdir)/mkinstalldirs $(sudodir) $(visudodir) $(sudoersdir) $(mandir8) $(mandir5)
+
+install-binaries: $(PROGS)
+	$(INSTALL) -o $(install_uid) -g $(install_gid) -m 4111 -s sudo $(sudodir)/sudo
+	$(INSTALL) -o $(install_uid) -g $(install_gid) -m 0111 -s visudo $(visudodir)/visudo
+
+install-sudoers:
+	@ if [ -f $(sudoersdir)/sudoers ]; then  \
+	    echo "Setting user/group and mode on existing $(sudoersdir)/sudoers file."; \
+	    chown $(install_uid) $(sudoersdir)/sudoers; \
+	    chgrp $(install_gid) $(sudoersdir)/sudoers; \
+	    chmod 0440 $(sudoersdir)/sudoers; \
+	else \
+	    $(INSTALL) -o $(install_uid) -g $(install_gid) -m 0440 $(srcdir)/sudoers $(sudoersdir)/sudoers; \
+	fi
+
+install-man:
+	$(INSTALL) -o $(install_uid) -g $(install_gid) -m 0444 $(srcdir)/sudo.$(mantype) $(mandir8)/sudo.$(mansect8)
+	$(INSTALL) -o $(install_uid) -g $(install_gid) -m 0444 $(srcdir)/visudo.$(mantype) $(mandir8)/visudo.$(mansect8)
+	$(INSTALL) -o $(install_uid) -g $(install_gid) -m 0444 $(srcdir)/sudoers.$(mantype) $(mandir5)/sudoers.$(mansect5)
+
+tags: $(SRCS)
+	ctags $(SRCS)
+
+TAGS: $(SRCS)
+	etags $(SRCS)
+
+clean:
+	-rm -f y.tab.[ch] *.o $(PROGS) testsudoers core sudo.core visudo.core
+
+mostlyclean: clean
+
+distclean: clean
+	rm -f Makefile config.h config.status config.cache config.log
+
+clobber: distclean
+
+realclean: distclean
+	rm -f TAGS tags
+
+dist: $(DISTFILES)
+	rm -f ../cu-sudo.v$(VERSION).tar.Z
+	( cd .. ; TF="/tmp/sudo.dist$$$$" ; rm -f $$TF ; for i in $(DISTFILES) ; \
+	  do echo sudo.v$(VERSION)/$$i >> $$TF ; done ; \
+	  tar cf cu-sudo.v$(VERSION).tar \
+	  `cat $$TF` && compress cu-sudo.v$(VERSION).tar && rm -f $$TF)
+	ls -l ../cu-sudo.v$(VERSION).tar.Z

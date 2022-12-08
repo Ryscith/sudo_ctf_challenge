@@ -1,0 +1,51 @@
+TODO list (most will be addressed in the next rewrite)
+
+01) Redo parsing to be more like op(8) with true command aliases where
+    can specify uid, gid(s) and part/all of the environment.
+
+02) Add default options to sudoers file (umask, def uid, def gids, dir, PATH).
+
+03) Add a SHELLS reserved word that checks against /etc/shells.
+
+04) Make the sudoers file accessible via NIS, Hesiod, and maybe NetInfo.
+
+05) Add a %h field to MAILSUBJECT for the hostname.
+
+06) Add a -h (?) flag to sudo for a history mechanism.
+
+07) Make parse.lex in the same coding style as everything else...
+
+08) Add an option to hard-code LD_LIBRARY_PATH?
+
+09) Add Prog_Alias facility (Prog_Alias VI = /usr/secure/bin/vi +args).
+
+10) Make '!' work in Cmnd_Alias, Host_Alias, User_Alias and runas list.
+
+11) check for <net/errno.h> in configure and include it in sudo.c if it exists.
+
+12) Add generic STREAMS support for getting interfaces and netmasks.
+
+13) Do shadow password detection at runtime like sunos' issecure(3)???
+    If so then start using GLOBAL_NO_SPW_ENT again (but rename it).
+
+14) Do all the envariable additions in one fell swoop for efficiency and speed.
+
+15) Catch/ignore signals in sudo?
+
+16) Make -p work with -v and -l in any order.
+
+17) Add support for "safe scripts" by checking for shell script
+    cookie (first two bytes are "#!") and execing the shell outselves
+    after doing the stat to guard against spoofing.  This should avoid
+    the race condition caused by going through namei() twice...
+
+18) Sudo should not allow someone with a nil password to run commands.
+
+19) Overhaul testsudoers to use parse.o so we don't reimplement things.
+
+20) Make runas_user a struct "runas" with user and group components.
+    (make uid and gid too???)
+
+21) Add -g group/gid option.
+
+22) Make `sudo -l' output prettier.
