@@ -12,7 +12,7 @@ they want to run.
 
 ## References
 YouTube tutorial explaining the vulnerability: \
-https://www.youtube.com/watch?v=R7c7vae_-gM \
+https://www.youtube.com/watch?v=R7c7vae_-gM
 
 CVE: \
 https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-1999-0958
